@@ -3,38 +3,21 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
-
-// Middleware to protect routes
-const auth = (req, res, next) => {
-  const token = req.header("Authorization")?.split(" ")[1]; // Expect: "Bearer <token>"
-  if (!token) return res.status(401).json({ msg: "No token, authorization denied" });
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // attach user info to request
-    next();
-  } catch (err) {
-    res.status(401).json({ msg: "Token is not valid" });
-  }
-};
+const auth = require("../middleware/authh"); // ✅ import middleware
 
 // @route   POST /api/auth/signup
-// backend/routes/auth.js
 router.post("/signup", async (req, res) => {
   try {
     const { firstName, lastName, email, phone, city, password, role } = req.body;
 
-    // check existing user
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
-    // hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // create new user
     user = new User({
       firstName,
       lastName,
@@ -42,10 +25,10 @@ router.post("/signup", async (req, res) => {
       phone,
       city,
       role,
-      password: hashedPassword, // ✅ hashed
+      password: hashedPassword,
       farmName: req.body.farmName || undefined,
-  farmAddress: req.body.farmAddress || undefined,
-  deliveryAddress: req.body.deliveryAddress || undefined,
+      farmAddress: req.body.farmAddress || undefined,
+      deliveryAddress: req.body.deliveryAddress || undefined,
     });
 
     await user.save();
@@ -57,7 +40,6 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-
 // @route   POST /api/auth/login
 router.post("/login", async (req, res) => {
   try {
@@ -66,7 +48,6 @@ router.post("/login", async (req, res) => {
     if (!user) return res.status(400).json({ msg: "Invalid email or password" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) return res.status(400).json({ msg: "Invalid email or password" });
 
     const token = jwt.sign(
@@ -82,18 +63,40 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
+// @route   GET /api/auth/profile
 // @access  Private
 router.get("/profile", auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password"); // exclude password
-    if (!user) return res.status(404).json({ msg: "User not found" });
+    const user = await User.findById(req.user.id)
+      .populate("bookedProducts.product", "cropName price images quantity");
+
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json(user);
   } catch (err) {
-    console.error("Profile error:", err.message);
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Cancel a booked product
+router.delete("/cancel/:bookingId", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    // Remove the booking from user's bookedProducts
+    user.bookedProducts = user.bookedProducts.filter(
+      (b) => b._id.toString() !== req.params.bookingId
+    );
+
+    await user.save();
+    res.json({ msg: "Booking cancelled successfully", bookedProducts: user.bookedProducts });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ msg: "Server error" });
   }
 });
+
 
 module.exports = router;

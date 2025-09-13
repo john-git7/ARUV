@@ -19,8 +19,8 @@
 
     // Role-based actions
     const farmerActions = [
-      { label: "Upload Projects", icon: <Upload size={32} />, description: "Add new projects or crops to your farm portfolio." },
-      { label: "Adopt a Crop", icon: <Leaf size={32} />, description: "Lease your land to consumers for seasonal crops." },
+      { label: "Upload Projects", icon: <Upload size={32} />, description: "Add new products or crops to your farm portfolio." },
+      { label: "Offer Your Farmland", icon: <Leaf size={32} />, description: "Lease your land to consumers for seasonal crops." },
     ];
 
     const consumerActions = [
@@ -111,7 +111,6 @@
           </div>
           <div className="flex items-center gap-6">
             <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-              <Bell size={24} />
             </motion.button>
             <motion.div className="flex items-center gap-2 cursor-pointer" whileHover={{ scale: 1.05 }} onClick={() => navigate("/profile")}>
               <User size={24} />
@@ -158,15 +157,23 @@
                   <p className="text-sm text-gray-700">{action.description}</p>
                 </div>
                 <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  className={`mt-4 px-4 py-2 rounded-xl font-semibold text-sm ${
-                    role === "farmer"
-                      ? "bg-gradient-to-r from-[rgb(95,141,78)] to-[rgb(40,84,48)] text-white"
-                      : "bg-[rgb(95,141,78)] text-white"
-                  }`}
-                >
-                  Go
-                </motion.button>
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  if (action.label === "Upload Projects") navigate("/upload-projects");
+                  if (action.label === "Offer Your Farmland") navigate("/adopt-crop");
+                  if (action.label === "View Products") navigate("/consumer-products");
+                  if (action.label === "Adopt a Crop") navigate("/consumer-adopt");
+
+                }}
+                className={`mt-4 px-4 py-2 rounded-xl font-semibold text-sm ${
+                  role === "farmer"
+                    ? "bg-gradient-to-r from-[rgb(95,141,78)] to-[rgb(40,84,48)] text-white"
+                    : "bg-[rgb(95,141,78)] text-white"
+                }`}
+              >
+                Go
+              </motion.button>
+              
               </motion.div>
             ))}
           </div>

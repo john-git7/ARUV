@@ -31,6 +31,18 @@ const userSchema = new mongoose.Schema(
         return this.role === "consumer";
       },
     },
+
+    // Booked products for consumers
+    bookedProducts: [
+      {
+        product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }, // reference actual Product
+        cropName: String,
+        price: Number,
+        quantity: Number,
+        image: String,
+        bookedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );
